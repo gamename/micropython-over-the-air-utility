@@ -280,7 +280,7 @@ class OTAFileMetadata:
 
         :return: Nothing
         """
-        if self.save_backups:
+        if self.save_backups and bool(self.get_filename() in os.listdir()):
             backup_file = self.BACKUP_FILE_PREFIX + self.get_filename()
             os.rename(self.get_filename(), backup_file)
         os.rename(self.latest_file, self.get_filename())
@@ -302,25 +302,25 @@ class OTADatabase:
     A simple database of files being monitored
 
     Attributes:
-        :param: version_entry_list - A list of OTAFileMetadata objects
+        :param: memory_resident_version_list - A list of OTAFileMetadata objects
     """
     DB_FILE = 'versions.json'
 
-    def __init__(self, version_entry_list, debug=False):
+    def __init__(self, memory_resident_version_list, debug=False):
         """
         Initializer.
         1. Read the database if it exists
         2. Create the database if it does not exist
         3. Sync the contents of the database and the OTAFileMetadata objects passed as attributes
 
-        :param version_entry_list: A list of OTAFileMetadata objects
-        :type version_entry_list: list
+        :param memory_resident_version_list: A list of OTAFileMetadata objects
+        :type memory_resident_version_list: list
         :param debug: Enable debug
         :type debug: bool
         """
         self.filename = self.DB_FILE
         self.debug = debug
-        self.version_entries = version_entry_list
+        self.version_entries = memory_resident_version_list
         if self.db_file_exists():
             for version_entry in self.version_entries:
                 filename = version_entry.get_filename()
