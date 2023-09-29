@@ -10,9 +10,8 @@ There are 4 classes defined here. They are:
 Tested on:
  1. Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
 
-Limitations:
- 1. This can only detect files in a single repo
- 2. It only works for public repos
+Caveats/Limitations:
+FIXME
 
 Thank You:
   This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
@@ -104,7 +103,7 @@ class OTAUpdater:
         repo_dct - A dictionary of repositories and their files to be updated
     """
 
-    def __init__(self, github_userid, github_token, repo_dct, debug=False):
+    def __init__(self, github_userid, github_token, repo_dct, debug=False, save_backups=False):
         """
         Initializer
 
@@ -119,10 +118,12 @@ class OTAUpdater:
         """
         self.files_obj = []
         self.debug = debug
+        self.save_backups = save_backups
 
         for repo in repo_dct.keys():
             for file in repo_dct[repo]:
-                self.files_obj.append(OTAFileMetadata(github_userid, github_token, repo, file, debug=self.debug))
+                self.files_obj.append(OTAFileMetadata(github_userid, github_token, repo, file,
+                                                      debug=self.debug, save_backups=self.save_backups))
 
         self.db = OTADatabase(self.files_obj, debug=self.debug)
 
@@ -173,10 +174,12 @@ class OTAFileMetadata:
         repository - The GitHub repository name
         filename - A single file name to be monitored
     """
+
     LATEST_FILE_PREFIX = '__latest__'
     ERROR_FILE_PREFIX = '__error__'
+    BACKUP_FILE_PREFIX = '__backup__'
 
-    def __init__(self, user, token, repository, filename, debug=False):
+    def __init__(self, user, token, repository, filename, debug=False, save_backups=False):
         """
         Initializer
 
@@ -190,6 +193,7 @@ class OTAFileMetadata:
         self.filename = filename
         self.url = f'https://api.github.com/repos/{repository}/contents/{self.filename}'
         self.debug = debug
+        self.save_backups = save_backups
         self.latest = None
         self.latest_file = None
         self.current = calculate_github_sha(self.filename)
@@ -276,6 +280,9 @@ class OTAFileMetadata:
 
         :return: Nothing
         """
+        if self.save_backups:
+            backup_file = self.BACKUP_FILE_PREFIX + self.get_filename()
+            os.rename(self.get_filename(), backup_file)
         os.rename(self.latest_file, self.get_filename())
         self.current = self.latest
 
