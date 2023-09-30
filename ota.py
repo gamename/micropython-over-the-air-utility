@@ -150,8 +150,9 @@ class OTAUpdater:
         files_updated_flag = False
         self.fetch_updates()
         for entry in self.files_obj:
+            print(f"OTAU: Checking {entry.get_filename()} ...")
             if entry.new_version_available():
-                print(f'OTAU: {entry.get_filename()} updated')
+                print(f'OTAU: --> {entry.get_filename()} updated')
                 if self.debug:
                     print(f'OTAU: current: {entry.get_current()}')
                     print(f'OTAU: latest:  {entry.get_latest()}')
