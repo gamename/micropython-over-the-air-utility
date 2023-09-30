@@ -16,6 +16,7 @@ FIXME
 Thank You:
   This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
 """
+import gc
 import hashlib
 import json
 import os
@@ -116,6 +117,7 @@ class OTAUpdater:
         :param debug: Enable debug
         :type debug: bool
         """
+        gc.enable()  # In case it is not in your 'boot.py' file
         self.files_obj = []
         self.debug = debug
         self.save_backups = save_backups
@@ -226,6 +228,8 @@ class OTAFileMetadata:
         """
         try:
             response = requests.get(self.url, headers=self.request_header).json()
+            # There is a known mem leak problem in 'urequests'. Below is a workaround
+            gc.collect()
         except ValueError:
             print("OTAF: Json error in response")
             print("OTAF: ", self.url)
