@@ -256,7 +256,9 @@ class OTAFileMetadata:
         There is a known mem leak in 'urequests'. Below is a workaround attempt
         """
         gc.collect()
-        if gc.mem_free() < self.OTA_MINIMUM_MEMORY:
+        free_mem = gc.mem_free()
+        print(f"OTAF: Free mem: {free_mem}")
+        if free_mem < self.OTA_MINIMUM_MEMORY:
             raise OTANoMemory()
 
     def update_latest(self):
