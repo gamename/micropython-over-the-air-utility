@@ -257,7 +257,7 @@ class OTAFileMetadata:
         """
         gc.collect()
         free_mem = gc.mem_free()
-        print(f"OTAF: Free mem: {free_mem}")
+        self.debug_print(f"OTAF: Free mem: {free_mem}")
         if free_mem < self.OTA_MINIMUM_MEMORY:
             raise OTANoMemory()
 
