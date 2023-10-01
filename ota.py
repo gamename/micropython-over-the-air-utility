@@ -140,6 +140,9 @@ class OTAUpdater:
         self.db = OTADatabase(self.files_obj, debug=self.debug)
 
     def debug_print(self, msg):
+        """
+        Print only when debug enabled
+        """
         if self.debug:
             print(msg)
 
@@ -228,7 +231,7 @@ class OTAFileMetadata:
 
     def debug_print(self, msg):
         """
-        FIXME
+        Print only when debug is enabled
         """
         if self.debug:
             print(msg)
@@ -366,7 +369,7 @@ class OTADatabase:
 
     def debug_print(self, msg):
         """
-        FIXME
+        Print only when debug enabled
         """
         if self.debug:
             print(msg)
