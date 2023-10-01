@@ -253,7 +253,7 @@ class OTAFileMetadata:
 
     def mem_check(self):
         """
-        There is a known mem leak problem in 'urequests'. Below is a workaround
+        There is a known mem leak in 'urequests'. Below is a workaround attempt
         """
         gc.collect()
         if gc.mem_free() < self.OTA_MINIMUM_MEMORY:
