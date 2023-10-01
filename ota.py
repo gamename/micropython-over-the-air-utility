@@ -227,6 +227,9 @@ class OTAFileMetadata:
         self.update_latest()
 
     def debug_print(self, msg):
+        """
+        FIXME
+        """
         if self.debug:
             print(msg)
 
@@ -362,6 +365,9 @@ class OTADatabase:
                 self.create(entry.to_json())
 
     def debug_print(self, msg):
+        """
+        FIXME
+        """
         if self.debug:
             print(msg)
 
