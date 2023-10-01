@@ -81,6 +81,16 @@ def valid_code(file_path) -> bool:
         return False  # Code is invalid or file not found
 
 
+class OTANoMemory(Exception):
+    """
+    Due to a known mem leak issue in 'urequests', flag when we run into it.
+    """
+
+    def __init__(self, message="Insufficient memory to continue"):
+        self.message = message
+        super().__init__(self.message)
+
+
 class OTANewFileWillNotValidate(Exception):
     """
     When we pull a new copy of a file, prior to its use, we validate that
@@ -183,6 +193,7 @@ class OTAFileMetadata:
     LATEST_FILE_PREFIX = '__latest__'
     ERROR_FILE_PREFIX = '__error__'
     BACKUP_FILE_PREFIX = '__backup__'
+    OTA_MINIMUM_MEMORY = 32000
 
     def __init__(self, user, token, repository, filename, debug=False, save_backups=False):
         """
@@ -233,6 +244,8 @@ class OTAFileMetadata:
             response = requests.get(self.url, headers=self.request_header).json()
             # There is a known mem leak problem in 'urequests'. Below is a workaround
             gc.collect()
+            if gc.mem_free() < self.OTA_MINIMUM_MEMORY:
+                raise OTANoMemory()
         except ValueError:
             print("OTAF: Json error in response")
             print("OTAF: ", self.url)
