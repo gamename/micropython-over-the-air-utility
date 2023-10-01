@@ -14,7 +14,7 @@ Tested on:
 Caveats/Limitations:
   - Only works with single files, not directories
 
-Thank You:
+Thanks:
   This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
 """
 import gc
@@ -251,22 +251,28 @@ class OTAFileMetadata:
             }
         }
 
+    def mem_check(self):
+        """
+        There is a known mem leak problem in 'urequests'. Below is a workaround
+        """
+        gc.collect()
+        if gc.mem_free() < self.OTA_MINIMUM_MEMORY:
+            raise OTANoMemory()
+
     def update_latest(self):
         """
         Query GitHub for the latest version of our file
 
         :return: Nothing
         """
+        self.mem_check()
         try:
             response = requests.get(self.url, headers=self.request_header).json()
-            # There is a known mem leak problem in 'urequests'. Below is a workaround
-            gc.collect()
-            if gc.mem_free() < self.OTA_MINIMUM_MEMORY:
-                raise OTANoMemory()
         except ValueError:
             print("OTAF: Json error in response")
             print("OTAF: ", self.url)
         else:
+            self.mem_check()
             if 'sha' in response:
                 self.latest = response['sha']
                 if self.new_version_available():
