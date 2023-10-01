@@ -174,9 +174,8 @@ class OTAUpdater:
             self.debug_print(f"OTAU: Comparing {entry.get_filename()}")
             if entry.new_version_available():
                 self.debug_print(f'OTAU: --> {entry.get_filename()} updated')
-                if self.debug:
-                    self.debug_print(f'OTAU: current: {entry.get_current()}')
-                    self.debug_print(f'OTAU: latest:  {entry.get_latest()}')
+                self.debug_print(f'OTAU: current: {entry.get_current()}')
+                self.debug_print(f'OTAU: latest:  {entry.get_latest()}')
                 entry.set_current_to_latest()
                 self.db.update(entry.to_json())
                 if not files_updated_flag:
