@@ -1,17 +1,18 @@
 """
 This is an Over-The-Air (OTA) utility to update microcontrollers on a Wi-Fi network.
 
-There are 4 classes defined here. They are:
+There are 5 classes defined here. They are:
   1. OTAUpdater - Takes care of updating files to the latest version
   2. OTAFileMetadata - Metadata for individual files
   3. OTADatabase - Handles read/write of the file info to a local "database"
   4. OTANewFileWillNotValidate - Exception for new files that will not validate prior to use
+  5. OTANoMemory - Exception for running out of memory due to known 'urequests' bug
 
 Tested on:
  1. Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
 
 Caveats/Limitations:
-FIXME
+  - Only works with single files, not directories
 
 Thank You:
   This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
