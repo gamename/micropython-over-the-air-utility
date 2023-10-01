@@ -151,10 +151,10 @@ class OTAUpdater:
         :return: Nothing
         """
         try:
-            self.debug_print("OTAU: Pulling latest GitHub versions")
+            self.debug_print("OTAU: Pulling latest GitHub versions ...")
             for ndx, _ in enumerate(self.files_obj):
                 file = self.files_obj[ndx].get_filename()
-                self.debug_print(f"OTAU: Pulling {file}")
+                self.debug_print(f"OTAU: ... {file}")
                 self.files_obj[ndx].update_latest()
             self.debug_print("OTAU: GitHub pulls completed")
         except OTANewFileWillNotValidate:
@@ -169,9 +169,9 @@ class OTAUpdater:
         self.debug_print("OTAU: Checking for updates")
         files_updated_flag = False
         self.fetch_updates()
-        self.debug_print("OTAU: Comparing GitHub version with local versions")
+        self.debug_print("OTAU: Comparing GitHub version with local versions ...")
         for entry in self.files_obj:
-            self.debug_print(f"OTAU: Comparing {entry.get_filename()}")
+            self.debug_print(f"OTAU: ... {entry.get_filename()}")
             if entry.new_version_available():
                 self.debug_print(f'OTAU: --> {entry.get_filename()} updated')
                 self.debug_print(f'OTAU: current: {entry.get_current()}')
