@@ -139,6 +139,10 @@ class OTAUpdater:
 
         self.db = OTADatabase(self.files_obj, debug=self.debug)
 
+    def debug_print(self, msg):
+        if self.debug:
+            print(msg)
+
     def fetch_updates(self):
         """
         Walk through all the OTAFileMetadata objects in a list and update each to
@@ -147,12 +151,12 @@ class OTAUpdater:
         :return: Nothing
         """
         try:
-            print("OTAU: Pulling latest GitHub versions")
+            self.debug_print("OTAU: Pulling latest GitHub versions")
             for ndx, _ in enumerate(self.files_obj):
                 file = self.files_obj[ndx].get_filename()
-                print(f"OTAU: Pulling {file}")
+                self.debug_print(f"OTAU: Pulling {file}")
                 self.files_obj[ndx].update_latest()
-            print("OTAU: GitHub pulls completed")
+            self.debug_print("OTAU: GitHub pulls completed")
         except OTANewFileWillNotValidate:
             print("OTAU: Validation error. Cannot update")
 
@@ -162,24 +166,24 @@ class OTAUpdater:
 
         :return: True if something updated, False otherwise
         """
-        print("OTAU: Checking for updates")
+        self.debug_print("OTAU: Checking for updates")
         files_updated_flag = False
         self.fetch_updates()
-        print("OTAU: Comparing GitHub version with local versions")
+        self.debug_print("OTAU: Comparing GitHub version with local versions")
         for entry in self.files_obj:
-            print(f"OTAU: Comparing {entry.get_filename()}")
+            self.debug_print(f"OTAU: Comparing {entry.get_filename()}")
             if entry.new_version_available():
-                print(f'OTAU: --> {entry.get_filename()} updated')
+                self.debug_print(f'OTAU: --> {entry.get_filename()} updated')
                 if self.debug:
-                    print(f'OTAU: current: {entry.get_current()}')
-                    print(f'OTAU: latest:  {entry.get_latest()}')
+                    self.debug_print(f'OTAU: current: {entry.get_current()}')
+                    self.debug_print(f'OTAU: latest:  {entry.get_latest()}')
                 entry.set_current_to_latest()
                 self.db.update(entry.to_json())
                 if not files_updated_flag:
                     files_updated_flag = True
 
         if not files_updated_flag:
-            print("OTAU: No updates found")
+            self.debug_print("OTAU: No updates found")
         return files_updated_flag
 
 
@@ -222,6 +226,10 @@ class OTAFileMetadata:
             'User-Agent': user
         }
         self.update_latest()
+
+    def debug_print(self, msg):
+        if self.debug:
+            print(msg)
 
     def to_json(self):
         """
@@ -353,6 +361,10 @@ class OTADatabase:
         else:
             for entry in self.version_entries:
                 self.create(entry.to_json())
+
+    def debug_print(self, msg):
+        if self.debug:
+            print(msg)
 
     def db_file_exists(self):
         """
