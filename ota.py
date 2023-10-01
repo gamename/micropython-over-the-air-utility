@@ -138,6 +138,8 @@ class OTAUpdater:
         """
         try:
             for ndx, _ in enumerate(self.files_obj):
+                file = self.files_obj[ndx].get_filename()
+                print(f"OTAU: Getting latest for {file}")
                 self.files_obj[ndx].update_latest()
         except OTANewFileWillNotValidate:
             print("OTAU: Validation error. Cannot update")
@@ -193,6 +195,7 @@ class OTAFileMetadata:
         :param debug: Enable debug
         :type debug: bool
         """
+        gc.enable()  # mem leak bugs
         self.filename = filename
         self.url = f'https://api.github.com/repos/{repository}/contents/{self.filename}'
         self.debug = debug
