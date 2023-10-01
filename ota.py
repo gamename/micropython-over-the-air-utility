@@ -271,6 +271,8 @@ class OTAFileMetadata:
         except ValueError:
             print("OTAF: Json error in response")
             print("OTAF: ", self.url)
+        except MemoryError:
+            raise OTANoMemory()
         else:
             self.mem_check()
             if 'sha' in response:
