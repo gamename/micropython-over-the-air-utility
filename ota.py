@@ -295,7 +295,6 @@ class OTAFileMetadata:
                 print("OTAF: ", response)
                 time.sleep(1)
 
-            response.close()
 
     def get_filename(self):
         """
