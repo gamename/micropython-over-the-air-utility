@@ -295,7 +295,6 @@ class OTAFileMetadata:
                 print("OTAF: ", response)
                 time.sleep(1)
 
-
     def get_filename(self):
         """
         Get the file name we are monitoring
