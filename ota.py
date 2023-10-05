@@ -7,7 +7,7 @@ How it works:
   commit a file to GitHub, it can be automatically downloaded to your Pico.
 
 Features:
-  - Track files in *multiple* repositories
+  - Track files in multiple repositories
   - Uses GitHub REST API to track file updates
 
 There are 5 classes defined here. They are:
