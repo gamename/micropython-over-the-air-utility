@@ -1,6 +1,11 @@
 """
 This is yet another Over-The-Air (OTA) utility to update Raspberry Pi Pico W on a Wi-Fi network.
 
+How it works:
+  Files committed to a GitHub repo are monitored.  When the updated() method is called, GitHub will be queried for
+  any new commits.  If updates are found, then we pull the latest file version down onto the Pico W. So, if you
+  commit a file to GitHub, it can be automatically downloaded to your Pico.
+
 Features:
   - Track files in *multiple* repositories
   - Uses GitHub REST API to track file updates
