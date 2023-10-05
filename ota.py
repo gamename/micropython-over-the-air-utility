@@ -1,5 +1,9 @@
 """
-This is an Over-The-Air (OTA) utility to update microcontrollers on a Wi-Fi network.
+This is yet another Over-The-Air (OTA) utility to update Raspberry Pi Pico W on a Wi-Fi network.
+
+Features:
+  - Track files in *multiple* repositories
+  - Uses GitHub REST API to track file updates
 
 There are 5 classes defined here. They are:
   1. OTAUpdater - Takes care of updating files to the latest version
@@ -9,10 +13,29 @@ There are 5 classes defined here. They are:
   5. OTANoMemory - Exception for running out of memory due to known 'urequests' bug
 
 Tested on:
- 1. Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
+  1. Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
 
 Caveats/Limitations:
   - Only works with single files, not directories
+
+Example Use:
+  from ota import OTAUpdater
+  from machine import reset
+  import time
+  import secrets
+
+  OTA_UPDATE_GITHUB_REPOS = {
+      "gamename/raspberry-pi-pico-w-mailbox-sensor": ["boot.py", "main.py", "mailbox.py"],
+      "gamename/micropython-over-the-air-utility": ["ota.py"],
+      "gamename/micropython-utilities": ["utils.py", "cleanup_logs.py"]
+  }
+
+  ota_updater = OTAUpdater(secrets.GITHUB_USER, secrets.GITHUB_TOKEN, OTA_UPDATE_GITHUB_REPOS)
+
+  if ota_updater.updated():
+      print("MAIN: OTA updates added. Resetting system.")
+      time.sleep(1)
+      reset()
 
 Thanks:
   This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
