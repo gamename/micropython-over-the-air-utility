@@ -261,6 +261,8 @@ class OTAUpdater:
 
         # Check if the update interval has expired (if a timer is set)
         if self.update_interval_seconds is not None:
+            self.debug_print(f"OTAU: current_time: {current_time} and last_update_time: {self.last_update_time}")
+
             elapsed_time = current_time - self.last_update_time
             if self.last_update_time is None or elapsed_time >= self.update_interval_seconds:
                 self.debug_print("OTAU: Update interval expired OR last_update_time is NULL")
