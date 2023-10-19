@@ -1,59 +1,78 @@
 """
-This is yet another Over-The-Air (OTA) utility to update Raspberry Pi Pico W on a Wi-Fi network.
+This is an Over-The-Air (OTA) utility for updating a microcontroller, such as Raspberry Pi Pico W, over a Wi-Fi network.
 
 How it works:
-  Files committed to a GitHub repo are monitored.  When the updated() method is called, GitHub will be queried for
-  any new commits.  If updates are found, then we pull the latest file version down onto the Pico W. So, if you
-  commit a file to GitHub, it can be automatically downloaded to your Pico.
+  - Files committed to GitHub repositories are monitored for changes.
+  - When the `updated()` method is called, GitHub is queried for any new commits.
+  - If updates are found, the latest file versions are pulled down onto the microcontroller.
+  - Files added to a GitHub repo can be automatically downloaded to the microcontroller.
+
+Update Intervals
+   The parameter "update_interval_minutes" specifies how often to actually update files.
+   If you call the "updated()" method during the interval, no updates will occur.  If
+   you call "updated()" after the timer has expired, you will get updates and the Pico
+   WILL BE RESET (i.e. rebooted). You can avoid having your Pico reset by simply not
+   specifying an update interval. But, you will be responsible for tracking timers and
+   how often you want to do updates.
 
 Features:
-  - Track files in multiple repositories
-  - Uses GitHub REST API to track file updates
+  - Track files in multiple repositories.
+  - Uses the GitHub REST API to track file updates.
 
-There are 5 classes defined here. They are:
-  1. OTAUpdater - Takes care of updating files to the latest version
-  2. OTAFileMetadata - Metadata for individual files
-  3. OTADatabase - Handles read/write of the file info to a local "database"
-  4. OTANewFileWillNotValidate - Exception for new files that will not validate prior to use
-  5. OTANoMemory - Exception for running out of memory due to known 'urequests' bug
+There are 5 classes defined here:
+  1. OTAUpdater: Manages the updating of files to the latest version.
+  2. OTAFileMetadata: Stores metadata for individual files.
+  3. OTADatabase: Handles read/write of file info to a local "database."
+  4. OTANewFileWillNotValidate: Exception for new files that will not validate prior to use.
+  5. OTANoMemory: Exception for running out of memory due to a known 'urequests' bug.
 
 Tested on:
-  1. Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
+  - Raspberry Pi Pico W - firmware v1.20.0 (2023-04-26 vintage)
+  - Raspberry Pi Pico W - firmware v1.21.0 (2023-10-06 vintage)
+
 
 Caveats/Limitations:
-  - Only works with single files, not directories
+  - Only works with single files, not directories.
 
-Example Use:
-  from ota import OTAUpdater
-  from machine import reset
-  import time
-  import secrets
+Example Usage:
+if __name__ == "__main__":
+    from machine import reset
+    import time
+    import secrets
 
-  OTA_UPDATE_GITHUB_REPOS = {
-      "gamename/raspberry-pi-pico-w-mailbox-sensor": ["boot.py", "main.py", "mailbox.py"],
-      "gamename/micropython-over-the-air-utility": ["ota.py"],
-      "gamename/micropython-utilities": ["utils.py", "cleanup_logs.py"]
-  }
+    OTA_UPDATE_GITHUB_REPOS = {
+        "gamename/raspberry-pi-pico-w-mailbox-sensor": ["boot.py", "main.py", "mailbox.py"],
+        "gamename/micropython-over-the-air-utility": ["ota.py"],
+        "gamename/micropython-utilities": ["utils.py", "cleanup_logs.py"]
+    }
 
-  ota_updater = OTAUpdater(secrets.GITHUB_USER, secrets.GITHUB_TOKEN, OTA_UPDATE_GITHUB_REPOS)
+    ota_updater = OTAUpdater(
+        secrets.GITHUB_USER,
+        secrets.GITHUB_TOKEN,
+        OTA_UPDATE_GITHUB_REPOS,
+        update_interval_minutes=60,  # Set the update interval to 60 minutes
+        debug=True,
+        save_backups=True
+    )
 
-  if ota_updater.updated():
-      print("MAIN: OTA updates added. Resetting system.")
-      time.sleep(1)
-      reset()
+    ota_updater.updated()  # Check for updates, and apply if available
+    print("MAIN: Updates checked. Continuing with the main code...")
 
 Thanks:
-  This was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
+  This project was inspired by, and loosely based on, Kevin McAleer's project https://github.com/kevinmcaleer/ota
 """
+
 import gc
 import hashlib
 import json
 import os
 import time
 
+import machine
 import ubinascii
 import uos
 import urequests as requests
+import utime
 
 
 def calculate_github_sha(filename):
@@ -143,18 +162,17 @@ class OTAUpdater:
         repo_dct - A dictionary of repositories and their files to be updated
     """
 
-    def __init__(self, github_userid, github_token, repo_dct, debug=False, save_backups=False):
+    def __init__(self, github_userid, github_token, repo_dct, update_interval_minutes=None,
+                 debug=False, save_backups=False):
         """
-        Initializer
+        Initialize the OTAUpdater.
 
-        :param github_userid: The GitHub user id 
-        :type github_userid: str
-        :param github_token: The GitHub user token 
-        :type github_token: str
-        :param repo_dct: A dictionary of repos and their files 
-        :type repo_dct: dict
-        :param debug: Enable debug
-        :type debug: bool
+        :param github_userid: The GitHub user id.
+        :param github_token: The GitHub user token.
+        :param repo_dct: A dictionary of repositories and their files to be updated.
+        :param update_interval_minutes: Update interval in minutes (optional, None for no timer).
+        :param debug: Enable debug mode.
+        :param save_backups: Save backup copies of files.
         """
         gc.enable()  # In case it is not in your 'boot.py' file
         self.files_obj = []
@@ -167,6 +185,13 @@ class OTAUpdater:
                                                       debug=self.debug, save_backups=self.save_backups))
 
         self.db = OTADatabase(self.files_obj, debug=self.debug)
+        self.update_interval_minutes = update_interval_minutes  # Update interval in minutes
+        if self.update_interval_minutes is not None:
+            self.update_interval_seconds = update_interval_minutes * 60  # Convert to seconds
+        else:
+            self.update_interval_seconds = None  # No timer
+
+        self.last_update_time = None  # Initialize last update time
 
     def debug_print(self, msg):
         """
@@ -192,11 +217,11 @@ class OTAUpdater:
         except OTANewFileWillNotValidate:
             print("OTAU: Validation error. Cannot update")
 
-    def updated(self) -> bool:
+    def _check_for_updates(self):
         """
-        If there are new versions available on GitHub, download them
+        Check for updates from GitHub and apply them if available.
 
-        :return: True if something updated, False otherwise
+        :return: True if updates were applied, False otherwise.
         """
         self.debug_print("OTAU: Checking for updates")
         files_updated_flag = False
@@ -213,9 +238,39 @@ class OTAUpdater:
                 if not files_updated_flag:
                     files_updated_flag = True
 
-        if not files_updated_flag:
-            self.debug_print("OTAU: No updates found")
         return files_updated_flag
+
+    def updated(self) -> bool:
+        """
+        Check for updates and apply them if the update interval has expired (if set).
+
+        :return: True if updates were applied, False otherwise.
+        """
+        current_time = utime.time()
+
+        # Check if the update interval has expired (if a timer is set)
+        if self.update_interval_seconds is not None:
+            if self.last_update_time is None or current_time - self.last_update_time >= self.update_interval_seconds:
+                if self._check_for_updates():
+                    self.last_update_time = current_time  # Update the last update time
+                    self.debug_print("OTAU: Updates applied. Resetting system.")
+                    utime.sleep(1)  # Sleep for a moment before resetting
+                    machine.reset()
+                else:
+                    self.debug_print("OTAU: No updates found")
+                    return False
+            else:
+                self.debug_print("OTAU: Update interval not yet expired")
+                return False
+        else:
+            # No timer, always check for updates
+            if self._check_for_updates():
+                self.debug_print("OTAU: Updates applied. Resetting system.")
+                utime.sleep(1)  # Sleep for a moment before resetting
+                machine.reset()
+            else:
+                self.debug_print("OTAU: No updates found (no timer)")
+                return False
 
 
 class OTAFileMetadata:
@@ -300,7 +355,7 @@ class OTAFileMetadata:
             response = requests.get(self.url, headers=self.request_header).json()
         except ValueError:
             print("OTAF: Json error in response")
-            print("OTAF: ", self.url)
+            print("OTAF: URL = ", self.url)
         except MemoryError:
             raise OTANoMemory()
         else:
@@ -319,8 +374,8 @@ class OTAFileMetadata:
                         self.latest_file = None
                         raise OTANewFileWillNotValidate(f'New {self.get_filename()} will not validate')
             else:
-                print("OTAF: ", self.url)
-                print("OTAF: ", response)
+                print("OTAF: URL = ", self.url)
+                print("OTAF: response = ", response)
                 time.sleep(1)
 
     def get_filename(self):
