@@ -429,8 +429,10 @@ class OTAFileMetadata:
             backup_file = self.BACKUP_FILE_PREFIX + self.get_filename()
             os.rename(self.get_filename(), backup_file)
         self.debug_print(f"renaming latest: {self.latest_file} to {self.get_filename()}")
-        os.rename(self.latest_file, self.get_filename())
-        self.current = self.latest
+        if self.latest_file:
+            os.rename(self.latest_file, self.get_filename())
+            self.current = self.latest
+
 
     def new_version_available(self):
         """
