@@ -256,6 +256,7 @@ class OTAUpdater:
 
         # If force_update is True, always check for updates
         if force_update:
+            self.debug_print("OTAU: Forcing update")
             return self._check_and_apply_updates(current_time)
 
         # Check if the update interval has expired (if a timer is set)
@@ -266,7 +267,7 @@ class OTAUpdater:
                 self.debug_print("OTAU: Update interval not yet expired")
                 return False
         else:
-            # No timer, always check for updates
+            self.debug_print("OTAU: No timer, always check for updates")
             return self._check_and_apply_updates(current_time)
 
     def _check_and_apply_updates(self, current_time) -> bool:
