@@ -163,7 +163,7 @@ class OTAUpdater:
     """
 
     def __init__(self, github_userid, github_token, repo_dct, update_interval_minutes=None,
-                 debug=False, save_backups=False):
+                 update_on_initialization=False, debug=False, save_backups=False):
         """
         Initialize the OTAUpdater.
 
@@ -171,6 +171,7 @@ class OTAUpdater:
         :param github_token: The GitHub user token.
         :param repo_dct: A dictionary of repositories and their files to be updated.
         :param update_interval_minutes: Update interval in minutes (optional, None for no timer).
+        :param update_on_initialization: Incorporate updates at init time.
         :param debug: Enable debug mode.
         :param save_backups: Save backup copies of files.
         """
@@ -192,6 +193,9 @@ class OTAUpdater:
             self.update_interval_seconds = None  # No timer
 
         self.last_update_time = None  # Initialize last update time
+
+        if update_on_initialization:
+            self.updated(force_update=True)
 
     def debug_print(self, msg):
         """
@@ -240,37 +244,47 @@ class OTAUpdater:
 
         return files_updated_flag
 
-    def updated(self) -> bool:
+    def updated(self, force_update=False) -> bool:
         """
         Check for updates and apply them if the update interval has expired (if set).
 
+        :param force_update: If True, force an update regardless of the update interval.
+        :type force_update: bool
         :return: True if updates were applied, False otherwise.
         """
         current_time = utime.time()
 
+        # If force_update is True, always check for updates
+        if force_update:
+            return self._check_and_apply_updates(current_time)
+
         # Check if the update interval has expired (if a timer is set)
         if self.update_interval_seconds is not None:
             if self.last_update_time is None or current_time - self.last_update_time >= self.update_interval_seconds:
-                if self._check_for_updates():
-                    self.last_update_time = current_time  # Update the last update time
-                    self.debug_print("OTAU: Updates applied. Resetting system.")
-                    utime.sleep(1)  # Sleep for a moment before resetting
-                    machine.reset()
-                else:
-                    self.debug_print("OTAU: No updates found")
-                    return False
+                return self._check_and_apply_updates(current_time)
             else:
                 self.debug_print("OTAU: Update interval not yet expired")
                 return False
         else:
             # No timer, always check for updates
-            if self._check_for_updates():
-                self.debug_print("OTAU: Updates applied. Resetting system.")
-                utime.sleep(1)  # Sleep for a moment before resetting
-                machine.reset()
-            else:
-                self.debug_print("OTAU: No updates found (no timer)")
-                return False
+            return self._check_and_apply_updates(current_time)
+
+    def _check_and_apply_updates(self, current_time) -> bool:
+        """
+        Check for updates and apply them if updates are available.
+
+        :param current_time: The current time.
+        :type current_time: int
+        :return: True if updates were applied, False otherwise.
+        """
+        if self._check_for_updates():
+            self.last_update_time = current_time  # Update the last update time
+            self.debug_print("OTAU: Updates applied. Resetting system.")
+            utime.sleep(1)  # Sleep for a moment before resetting
+            machine.reset()
+        else:
+            self.debug_print("OTAU: No updates found")
+            return False
 
 
 class OTAFileMetadata:
