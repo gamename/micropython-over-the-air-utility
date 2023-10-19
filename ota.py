@@ -285,11 +285,11 @@ class OTAUpdater:
         :return: True if updates were applied, False otherwise.
         """
         if self._check_for_updates():
-            self.last_update_time = current_time  # Update the last update time
             self.debug_print("OTAU: Updates applied. Resetting system.")
             utime.sleep(1)  # Sleep for a moment before resetting
             machine.reset()
         else:
+            self.last_update_time = current_time  # Update the last update time
             self.debug_print("OTAU: No updates found")
             return False
 
